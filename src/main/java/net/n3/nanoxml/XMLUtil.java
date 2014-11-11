@@ -43,6 +43,12 @@ import java.io.StringReader;
 class XMLUtil
 {
 
+    protected static boolean strictEntityProcessing = true;
+    
+    public static void setStrictEntityProcessing( boolean val ) {
+        strictEntityProcessing = val;
+    }
+    
    /**
     * Skips the remainder of a comment.
     * It is assumed that &lt;!- is already read.
@@ -276,14 +282,20 @@ class XMLUtil
       entity = entity.substring(1, entity.length() - 1);
       Reader entityReader = entityResolver.getEntity(reader, entity);
 
-      boolean externalEntity;
+      boolean externalEntity = false;
       if (entityReader == null) {
-         XMLUtil.errorInvalidEntity(reader.getSystemID(),
-                                    reader.getLineNr(),
-                                    entity);
+          if ( strictEntityProcessing ) {
+              XMLUtil.errorInvalidEntity(reader.getSystemID(),
+                                         reader.getLineNr(),
+                                         entity);
+          } else {
+              externalEntity = true;
+              entityReader = new StringReader(entity+";");
+          }
+      } else {
+          externalEntity = entityResolver.isExternalEntity(entity);
       }
       
-      externalEntity = entityResolver.isExternalEntity(entity);
       reader.startNewStream(entityReader, !externalEntity);
    }
 
