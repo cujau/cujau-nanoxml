@@ -28,11 +28,9 @@
 
 package net.n3.nanoxml;
 
-
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
-
 
 /**
  * Utility methods for NanoXML.
@@ -279,6 +277,7 @@ class XMLUtil
       throws IOException,
              XMLParseException
    {
+      String origEntity = entity;
       entity = entity.substring(1, entity.length() - 1);
       Reader entityReader = entityResolver.getEntity(reader, entity);
 
@@ -289,8 +288,12 @@ class XMLUtil
                                          reader.getLineNr(),
                                          entity);
           } else {
-              externalEntity = true;
-              entityReader = new StringReader(entity+";");
+             externalEntity = true;
+             if ( origEntity.startsWith( "&" ) && origEntity.endsWith( ";" )) {
+                entityReader = new StringReader( entity );
+             } else {
+                entityReader = new StringReader( "&amp;" + origEntity.substring( 1 ) );
+             }
           }
       } else {
           externalEntity = entityResolver.isExternalEntity(entity);
@@ -298,7 +301,6 @@ class XMLUtil
       
       reader.startNewStream(entityReader, !externalEntity);
    }
-
 
    /**
     * Processes a character literal.
@@ -386,13 +388,22 @@ class XMLUtil
       if (ch == entityChar) {
          while (ch != ';') {
             ch = reader.read();
+            if (!strictEntityProcessing) {
+               // If we are not strictly parsing, read at most up till the next '<'
+               // because there seems to be an incomplete entity.
+               if ( ch == '<' ) {
+                  // Put the "<" back so we can continue parsing properly.
+                  reader.unread( ch );
+                  ch = ';';
+                  continue;
+               }
+            }
             buf.append(ch);
          }
       }
 
       return buf.toString();
    }
-
 
    /**
     * Reads a character from the reader disallowing entities.
