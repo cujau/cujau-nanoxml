@@ -5,7 +5,7 @@
 
     <groupId>org.cujau</groupId>
     <artifactId>cujau-nanoxml</artifactId>
-    <version>2.3.3-SNAPSHOT</version>
+    <version>2.3.3</version>
 
     <name>CUJAU-NANOXML</name>
     <description>Common Utilities for Java Appliation Use - NanoXML</description>
